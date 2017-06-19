@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import istanbul.gamelab.ngdroid.base.BaseCanvas;
 import istanbul.gamelab.ngdroid.core.NgMediaPlayer;
+import istanbul.gamelab.ngdroid.util.Log;
 import istanbul.gamelab.ngdroid.util.Utils;
 
 
@@ -21,20 +22,25 @@ import istanbul.gamelab.ngdroid.util.Utils;
 public class GameCanvas extends BaseCanvas {
 
     /*Global Değişkenler*/
-    private Bitmap tileset, spritesheet, bullet, enemy, explode;
+    private Bitmap tileset, spritesheet, bullet, enemy, explode, laser, buttons;
+    private Rect restartsrc, playsrc, exitsrc, restartdst, playdst, exitdst;
     private int kareno, animasyonno, animasyonyonu;
     private int spritex, spritey , hiz, hizx, hizy, bulletoffsetx_temp, bulletoffsety_temp, bulletspeed; // Shift+F6 - Refactor Kısatuşu
     private int bulletx_temp, bullety_temp, explodeframeno;
-private int sesefkti_patlama;
+    private int laserspeed;
+private long prevtime, time;
+    private int lasery, laserx1, laserx2;
+    private int sesefkti_patlama;
     private int enemyspeedx, enemyspeedy,enemyx, enemyy, donmenoktasi;
-
-    private boolean donmeboolean;
-
+private Rect lasersrc, laserdst1, laserdst2;
+    private boolean donmeboolean, spriteexist;
+private boolean playshow;
     private Random enemyrnd;
 
 
     private NgMediaPlayer arkaplan_muzik;
     private boolean enemyexist, exploded;
+private boolean guishow;
 
     public Vector <Rect> bulletdst;
     public Vector <Integer> bulletx2, bullety2, bulletoffsetx2, bulletoffsety2, bulletspeedx2, bulletspeedy2;
@@ -55,12 +61,34 @@ private int sesefkti_patlama;
         }
         catch (Exception e){
             e.printStackTrace();
+
         }
+        //region gui
+        buttons = Utils.loadImage(root,"images/buttons.png");
+        restartsrc = new Rect();
+        restartdst = new Rect();
+        playsrc = new Rect();
+        playdst = new Rect();
+        exitsrc = new Rect();
+        exitdst = new Rect();
+        //endregion
+
+        spriteexist = true;
+        laserspeed = 45;
+        lasery = -400;
+
+playshow = true;
+
+        prevtime = System.currentTimeMillis();
 arkaplan_muzik = new NgMediaPlayer(root);
         arkaplan_muzik.load("sounds/m2.mp3");
         arkaplan_muzik.setVolume(0.5f);
         arkaplan_muzik.prepare();
         arkaplan_muzik.start();
+laser = Utils.loadImage(root, "images/beams1.png");
+        lasersrc = new Rect();
+        laserdst1 =new Rect();
+        laserdst2 =new Rect();
 
 
 
@@ -127,8 +155,43 @@ enemyexist=true;
     }
 
     public void update() {
-
         tilesrc.set(0,0,64,64);
+        playsrc.set(0, 0, 256, 256);
+        playdst.set(getWidthHalf()-64, getHeightHalf()-64, getWidthHalf()+64, getHeightHalf()+64 );
+        if(playshow){
+            return;
+        }
+lasersrc.set(0, 0, 64, 128);
+
+restartsrc.set(256, 0, 512, 256);
+        exitsrc.set(512, 0, 768, 256 );
+
+        time = System.currentTimeMillis();
+
+        if(time>prevtime+4000 && enemyexist){
+            prevtime = time;
+
+            laserx1 = enemyx;
+            laserx2 = enemyx + 192;
+            laserdst1.set(laserx1, enemyy-128, enemyx+64, enemyy);
+            laserdst2.set(laserx2, enemyy-128, enemyx+256, enemyy);
+            lasery = enemyy-25;
+
+        }
+
+        lasery-=laserspeed;
+        laserdst1.set(laserx1, lasery, laserx1+64, lasery+128);
+        laserdst2.set(laserx2, lasery, laserx2+64, lasery+128);
+
+if(spritedst.intersect(laserdst1) || spritedst.intersect(laserdst2)){
+    spritedst.set(0, 0, 0, 0);
+    spriteexist = false;
+    guishow = true;
+
+}
+
+
+
         if(donmeboolean){
             if(enemyspeedx>0){
                 donmenoktasi = enemyrnd.nextInt(getWidth() - 256 - (enemyx+50) ) + enemyx;
@@ -158,7 +221,7 @@ enemyexist=true;
         for(int i = 0; i< bulletdst.size(); i++){
     if(enemydst.contains(bulletdst.elementAt(i))) {
 
-        explodedst.set(bulletx2.elementAt(i) - 64, bullety2.elementAt(i) - 64, bulletx2.elementAt(i) + 64, bullety2.elementAt(i)+64);
+        explodedst.set(enemyx, enemyy, enemyx + 256, enemyy + 256);
 
         bulletx2.removeElementAt(i);
         bullety2.removeElementAt(i);
@@ -245,7 +308,7 @@ if(exploded){
             animasyonyonu=9;
         }
 
-        if(Math.abs(hizx)>0||Math.abs(hizy)>0){
+        if(Math.abs(hizx)>0 || Math.abs(hizy)>0){
             animasyonno=1;
         }
         else{
@@ -253,9 +316,14 @@ if(exploded){
         }
 
         spritesrc.set(kareno*128, animasyonyonu*128, (kareno+1)*128, (animasyonyonu+1)*128); //Resimden aldığımız koordinatlar
-        spritedst.set(spritex, spritey, spritex+256, spritey+256); //Ekrana çizeleceği koordinatlar
+        if(spriteexist){
 
+
+            spritedst.set(spritex, spritey, spritex+256, spritey+256); //Ekrana çizeleceği koordinatlar
+
+        }
         bulletsrc.set(0,0,70,70);
+
         for (int i=0; i < bulletx2.size(); i++){
             bulletdst.elementAt(i).set(bulletx2.elementAt(i), bullety2.elementAt(i), bulletx2.elementAt(i)+32, bullety2.elementAt(i)+32);
         }
@@ -286,6 +354,21 @@ if(exploded){
     canvas.drawBitmap(explode, explodesrc, explodedst, null);
 
 }
+
+        canvas.drawBitmap(laser, lasersrc, laserdst1, null);
+        canvas.drawBitmap(laser, lasersrc, laserdst2, null);
+        if(playshow){
+            canvas.drawBitmap(buttons, playsrc, playdst, null );
+        }
+
+        if(guishow) {
+
+
+
+            canvas.drawBitmap(buttons, restartsrc, restartdst, null);
+            canvas.drawBitmap(buttons, exitsrc, exitdst, null);
+        }
+
     }
     public Rect getexplodeframe(int frameno){
        frameno=15- frameno;
@@ -327,6 +410,7 @@ if(exploded){
     }
 
     public void touchUp(int x, int y) {
+       //region control
         if(x-touchx>100){
             animasyonno=1;
             animasyonyonu=0;
@@ -387,9 +471,28 @@ if(exploded){
             bullety_temp =spritey+ bulletoffsety_temp;
             bulletdst.add(new Rect(bulletx_temp, bullety_temp, bulletx_temp +32, bullety_temp +32));
         }
-    }
+        //endregion
+        //region gui control
+        if(guishow) {
 
 
+            if (playdst.contains(x, y)) {
+                // Log.i(TAG, "PLAY'E TIKLANDI");
+            }
+            if (restartdst.contains(x, y)) {
+                //Log.i(TAG, "RESTART'A TIKLANDI");
+                root.setup();
+            }
+            if (exitdst.contains(x, y)) {
+                // Log.i(TAG, "EXIT'E TIKLANDI");
+                System.exit(0);
+            }
+        }
+                //endregion
+           if(playdst.contains(x, y)){
+               playshow = false;
+           }
+            }
     public void pause() {
 
     }
