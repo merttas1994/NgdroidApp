@@ -2,6 +2,7 @@ package com.ngdroidapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 
 import java.util.Random;
@@ -34,13 +35,16 @@ private long prevtime, time;
     private int enemyspeedx, enemyspeedy,enemyx, enemyy, donmenoktasi;
 private Rect lasersrc, laserdst1, laserdst2;
     private boolean donmeboolean, spriteexist;
-private boolean playshow;
+
     private Random enemyrnd;
 
-
+private Rect textdst;
     private NgMediaPlayer arkaplan_muzik;
     private boolean enemyexist, exploded;
 private boolean guishow;
+ private Paint textcolor;
+    private int textsize;
+    private String text;
 
     public Vector <Rect> bulletdst;
     public Vector <Integer> bulletx2, bullety2, bulletoffsetx2, bulletoffsety2, bulletspeedx2, bulletspeedy2;
@@ -77,7 +81,7 @@ private boolean guishow;
         laserspeed = 45;
         lasery = -400;
 
-playshow = true;
+guishow = false;
 
         prevtime = System.currentTimeMillis();
 arkaplan_muzik = new NgMediaPlayer(root);
@@ -150,21 +154,24 @@ enemyexist=true;
         hiz = 16;
         hizx = 0;
         hizy = 0;
-
-
+textcolor = new Paint();
+        textcolor.setARGB(255, 255, 0, 0);
+textsize = 64;
+        textcolor.setTextSize(textsize);
+        text = "GAME OVER!";
+        // textdst.set(textcolor.getTextBounds(text, 0, text.length(), textdst));
+        textcolor.setTextAlign(Paint.Align.CENTER);
     }
 
     public void update() {
         tilesrc.set(0,0,64,64);
-        playsrc.set(0, 0, 256, 256);
-        playdst.set(getWidthHalf()-64, getHeightHalf()-64, getWidthHalf()+64, getHeightHalf()+64 );
-        if(playshow){
-            return;
-        }
+
 lasersrc.set(0, 0, 64, 128);
 
 restartsrc.set(256, 0, 512, 256);
         exitsrc.set(512, 0, 768, 256 );
+        restartdst.set(getWidthHalf() -192, getHeightHalf() - 64, getWidthHalf() - 64, getHeightHalf() +64);
+        exitdst.set(getWidthHalf() +64, getHeightHalf() - 64, getWidthHalf() +192, getHeightHalf() +64);
 
         time = System.currentTimeMillis();
 
@@ -223,16 +230,19 @@ if(spritedst.intersect(laserdst1) || spritedst.intersect(laserdst2)){
 
         explodedst.set(enemyx, enemyy, enemyx + 256, enemyy + 256);
 
-        bulletx2.removeElementAt(i);
-        bullety2.removeElementAt(i);
-        bulletdst.removeElementAt(i);
-        bulletspeedx2.removeElementAt(i);
-        bulletspeedy2.removeElementAt(i);
+        bulletx2.removeAllElements();
+        bullety2.removeAllElements();
+        bulletdst.removeAllElements();
+        bulletspeedx2.removeAllElements();
+        bulletspeedy2.removeAllElements();
+
 
         enemyexist=false;
         enemydst.set(0,0,0,0);
         exploded = true;
+        guishow = true;
         root.soundManager.play(sesefkti_patlama);
+
 
 
     }
@@ -357,13 +367,11 @@ if(exploded){
 
         canvas.drawBitmap(laser, lasersrc, laserdst1, null);
         canvas.drawBitmap(laser, lasersrc, laserdst2, null);
-        if(playshow){
-            canvas.drawBitmap(buttons, playsrc, playdst, null );
-        }
+
 
         if(guishow) {
 
-
+canvas.drawText(text, getWidthHalf(), getHeightHalf()-300, textcolor);
 
             canvas.drawBitmap(buttons, restartsrc, restartdst, null);
             canvas.drawBitmap(buttons, exitsrc, exitdst, null);
@@ -475,13 +483,9 @@ if(exploded){
         //region gui control
         if(guishow) {
 
-
-            if (playdst.contains(x, y)) {
-                // Log.i(TAG, "PLAY'E TIKLANDI");
-            }
             if (restartdst.contains(x, y)) {
                 //Log.i(TAG, "RESTART'A TIKLANDI");
-                root.setup();
+                setup();
             }
             if (exitdst.contains(x, y)) {
                 // Log.i(TAG, "EXIT'E TIKLANDI");
@@ -489,9 +493,7 @@ if(exploded){
             }
         }
                 //endregion
-           if(playdst.contains(x, y)){
-               playshow = false;
-           }
+
             }
     public void pause() {
 

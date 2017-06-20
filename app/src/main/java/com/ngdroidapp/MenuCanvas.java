@@ -1,9 +1,12 @@
 package com.ngdroidapp;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 
 import istanbul.gamelab.ngdroid.base.BaseCanvas;
 import istanbul.gamelab.ngdroid.util.Log;
+import istanbul.gamelab.ngdroid.util.Utils;
 
 /**
  * Created by noyan on 27.06.2016.
@@ -11,6 +14,9 @@ import istanbul.gamelab.ngdroid.util.Log;
  */
 
 public class MenuCanvas extends BaseCanvas {
+    private Bitmap background, buttons;
+    private Rect backgroundsrc, backgrounddst, playsrc, playdst, exitsrc, exitdst;
+private GameCanvas gc;
 
 
     public MenuCanvas(NgApp ngApp) {
@@ -18,13 +24,30 @@ public class MenuCanvas extends BaseCanvas {
     }
 
     public void setup() {
+        gc =new GameCanvas(root); //Gamecanvas objesini oluşturduk.
+    background = Utils.loadImage(root, "images/bg.jpg");
+        backgroundsrc = new Rect();
+        backgrounddst =new Rect();
+buttons = Utils.loadImage(root, "images/buttons.png");
+        playsrc = new Rect();
+playdst = new Rect();
+        exitsrc = new Rect();
+        exitdst = new Rect();
     }
 
     public void update() {
+    backgroundsrc.set(0, 0, 1080, 1920);
+        backgrounddst.set(0, 0, getWidth(), getHeight());
+playsrc.set(0, 0, 256, 256);
+        playdst.set(getWidthHalf()-192, getHeightHalf()-64, getWidthHalf()-64, getHeightHalf()+64);
+        exitsrc.set(512, 0, 768, 256);
+        exitdst.set(getWidthHalf()+64, getHeightHalf()-64, getWidthHalf()+192, getHeightHalf()+64);
     }
 
     public void draw(Canvas canvas) {
-
+canvas.drawBitmap(background, backgroundsrc, backgrounddst, null);
+        canvas.drawBitmap(buttons, playsrc, playdst, null);
+        canvas.drawBitmap(buttons, exitsrc, exitdst, null);
     }
 
     public void keyPressed(int key) {
@@ -45,6 +68,13 @@ public class MenuCanvas extends BaseCanvas {
     }
 
     public void touchUp(int x, int y) {
+
+        if(exitdst.contains(x, y)){
+            System.exit(0);
+        }
+        if(playdst.contains(x, y)){
+            root.canvasManager.setCurrentCanvas(gc);
+        }
     }
 
     public void surfaceChanged(int width, int height) {
